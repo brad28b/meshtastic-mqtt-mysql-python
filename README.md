@@ -43,7 +43,7 @@ Your own local mysql-server - the database schema is provided in meshtastic.sql
 4) Create your MySQL database. Call the database 'meshtastic'. You can use the database schema found in file meshtastic.sql
 5) Create a user on your MySQL server, and grant it the necessary permissions to read and write to the database.
 6) Edit monitor_mesh.py, and add in the credential values for your MQTT and MYSQL servers, and your Meshtastic node ID.
-7) Give monitor_mesh.py execute permissions, using "chmod +x monitor_mesh.php"
+7) Give monitor_mesh.py execute permissions, using "chmod +x monitor_mesh.py"
 8) To run monitor_mesh.py:
 
 If you want to run in background mode, detached from your shell: "nohup ./monitor_mesh.py &> /dev/null &disown"
