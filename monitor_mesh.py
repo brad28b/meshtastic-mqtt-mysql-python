@@ -16,7 +16,7 @@ broker_port = 1883
 client_id = "mesh-monitor-py"
 topic = "Meshtastic/2/json/LongFast/!da5ed0a0" # replace !da5ed0a0 with your own Node ID
 
-# You should not need to modify anything beyong here
+# You should not need to modify anything beyond here
 
 # Connect to MySQL database
 conn = pymysql.connect(host=servername, user=username, password=password, database=dbname)
