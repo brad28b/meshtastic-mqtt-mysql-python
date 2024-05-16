@@ -7,13 +7,16 @@ import json
 # MySQL database configuration
 servername = "localhost"
 username = "meshtastic"
-password = "YOUR_PASSWORD_HERE"
+password = "YOUR_PASSWORD"
 dbname = "meshtastic"
 
 # MQTT broker configuration
-broker_address = "192.168.X.X"
+broker_address = "192.168.x.x"
 broker_port = 1883
 client_id = "mesh-monitor-py"
+topic = "Meshtastic/2/json/LongFast/!da5ed0a0" # replace !da5ed0a0 with your own Node ID
+
+# You should not need to modify anything beyong here
 
 # Connect to MySQL database
 conn = pymysql.connect(host=servername, user=username, password=password, database=dbname)
@@ -32,16 +35,27 @@ def process_JSON(data, type):
             sql_values += "%s,"
             params.append(value)
 
-    for field, value in data['payload'].items():
-        if isinstance(value, list):
-            field_str = '|'.join([f"node_id:{item['node_id']}:snr:{item['snr']}" for item in value])
-            sql_columns += f"`payload_{field}`,"
-            sql_values += "%s,"
-            params.append(field_str)
-        else:
-            sql_columns += f"`payload_{field}`,"
-            sql_values += "%s,"
-            params.append(value)
+    payload_value = data.get('payload')
+    if isinstance(payload_value, dict):
+        for field, value in payload_value.items():
+            if isinstance(value, list):
+                if field == 'neighbors':
+                    # Extract neighbor information and join into a single string
+                    field_str = '|'.join([f"node_id:{item['node_id']}:snr:{item['snr']}" for item in value])
+                else:
+                    field_str = '|'.join(value)  # Concatenate array elements into a string
+                sql_columns += f"`payload_{field}`,"
+                sql_values += "%s,"
+                params.append(field_str)
+            else:
+                sql_columns += f"`payload_{field}`,"
+                sql_values += "%s,"
+                params.append(value)
+    else:
+        # Handle the case where payload is not a dictionary with iterable values
+        sql_columns += "`payload_route`,"
+        sql_values += "%s,"
+        params.append(payload_value)
 
     # Remove trailing commas
     sql_columns = sql_columns.rstrip(",")
@@ -59,8 +73,7 @@ def process_JSON(data, type):
     cursor.close()
 
 def on_connect(client, userdata, flags, rc):
-#    print("Connected to MQTT broker with result code "+str(rc))
-    client.subscribe("Meshtastic/2/json/LongFast/!da5ed0a0")
+    client.subscribe(topic)
 
 def on_message(client, userdata, msg):
     print(msg.payload.decode())
@@ -70,12 +83,9 @@ def on_message(client, userdata, msg):
     if data['type'] in known_types:
         process_JSON(data, data['type'])
 
-
 mqtt_client = mqtt.Client(client_id=client_id)
 mqtt_client.on_connect = on_connect
 mqtt_client.on_message = on_message
-
-# print("MySQL connection successful")
 
 try:
     mqtt_client.connect(broker_address, broker_port, 60)
